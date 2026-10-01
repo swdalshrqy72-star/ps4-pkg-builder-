@@ -1,0 +1,27 @@
+name: Build PS4 PKG
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download & Extract Tools
+        run: |
+          curl -L -o pkg_tools.zip "https://github.com/Bucanero/pkgi-ps4/releases/download/v1.0.0/pkg_tools.zip"
+          Expand-Archive -Path pkg_tools.zip -DestinationPath C:\pkg_tools
+          tar -xzf PS4_Dummy_App_Project.tar.gz
+
+      - name: Build Fake PKG
+        run: |
+          C:\pkg_tools\orbis-pub-cmd.exe img_create --format pkg data/data/com.termux/files/home/ps4_app MyTestApp.pkg
+
+      - name: Upload PKG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS4-PKG-File
+          path: MyTestApp.pkg
