@@ -10,17 +10,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download Tools & Extract Project
+      - name: Download Tools & Extract
         run: |
           curl -L -o pkg_tools.zip "https://github.com/Bucanero/pkgi-ps4/releases/download/v1.0.0/pkg_tools.zip"
           Expand-Archive -Path pkg_tools.zip -DestinationPath C:\pkg_tools
           tar -xzf PS4_Dummy_App_Project.tar.gz
-          Get-ChildItem -Recurse -Filter "eboot.bin"
 
-      - name: Build Fake PKG
+      - name: Locate App and Generate GP4
         run: |
-          $appPath = (Get-ChildItem -Recurse -Filter "eboot.bin").Directory.FullName
-          C:\pkg_tools\orbis-pub-cmd.exe img_create --format pkg "$appPath" MyTestApp.pkg
+          $eboot = Get-ChildItem -Recurse -Filter "eboot.bin" | Select-Object -First 1
+          $appDir = $eboot.Directory.FullName
+          echo "App directory is: $appDir"
+          
+          # تحميل أداة gengp4 وتوليد ملف المشروع
+          curl -L -o gengp4.exe "https://github.com/Bucanero/pkgi-ps4/releases/download/v1.0.0/gengp4.exe"
+          .\gengp4.exe "$appDir" project.gp4
+
+      - name: Build PKG File
+        run: |
+          C:\pkg_tools\orbis-pub-cmd.exe img_create project.gp4 MyTestApp.pkg
 
       - name: Upload PKG Artifact
         uses: actions/upload-artifact@v4
